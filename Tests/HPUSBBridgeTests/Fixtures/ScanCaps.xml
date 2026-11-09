@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Representative LEDM document (hand-written from the public schema, not captured from a device). -->
+<ScanCaps xmlns="http://www.hp.com/schemas/imaging/con/cnx/scan/2008/08/19">
+  <ColorEntries>
+    <ColorEntry><ColorType>K1</ColorType></ColorEntry>
+    <ColorEntry><ColorType>Gray8</ColorType></ColorEntry>
+    <ColorEntry><ColorType>Color8</ColorType></ColorEntry>
+  </ColorEntries>
+  <Platen>
+    <InputSourceCaps>
+      <MinWidth>8</MinWidth>
+      <MinHeight>8</MinHeight>
+      <MaxWidth>2550</MaxWidth>
+      <MaxHeight>3508</MaxHeight>
+      <SupportedResolutions>
+        <Resolution><XResolution>75</XResolution><YResolution>75</YResolution></Resolution>
+        <Resolution><XResolution>200</XResolution><YResolution>200</YResolution></Resolution>
+        <Resolution><XResolution>300</XResolution><YResolution>300</YResolution></Resolution>
+        <Resolution><XResolution>600</XResolution><YResolution>600</YResolution></Resolution>
+        <Resolution><XResolution>1200</XResolution><YResolution>1200</YResolution></Resolution>
+      </SupportedResolutions>
+    </InputSourceCaps>
+  </Platen>
+</ScanCaps>

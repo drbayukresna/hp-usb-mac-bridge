@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Representative LEDM document (hand-written from the public schema, not captured from a device). -->
+<j:Job xmlns:j="http://www.hp.com/schemas/imaging/con/ledm/jobs/2009/04/30" xmlns:dd="http://www.hp.com/schemas/imaging/con/dictionaries/1.0/" xmlns:scan="http://www.hp.com/schemas/imaging/con/cnx/scan/2008/08/19">
+  <j:JobUrl>/Jobs/JobList/2</j:JobUrl>
+  <j:JobCategory>Scan</j:JobCategory>
+  <j:JobState>Processing</j:JobState>
+  <ScanJob xmlns="http://www.hp.com/schemas/imaging/con/cnx/scan/2008/08/19">
+    <PreScanPage>
+      <PageNumber>1</PageNumber>
+      <PageState>ReadyToUpload</PageState>
+      <BufferInfo><ScanSettings><XResolution>300</XResolution></ScanSettings></BufferInfo>
+      <BinaryURL>/Scan/Jobs/2/Pages/1</BinaryURL>
+      <ImageOrientation>Normal</ImageOrientation>
+    </PreScanPage>
+  </ScanJob>
+</j:Job>

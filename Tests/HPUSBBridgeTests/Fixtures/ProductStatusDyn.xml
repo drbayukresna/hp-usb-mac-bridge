@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Representative LEDM document (hand-written from the public schema, not captured from a device). -->
+<psdyn:ProductStatusDyn xmlns:psdyn="http://www.hp.com/schemas/imaging/con/ledm/productstatusdyn/2007/10/31" xmlns:dd="http://www.hp.com/schemas/imaging/con/dictionaries/1.0/" xmlns:ad="http://www.hp.com/schemas/imaging/con/ledm/alertdetails/2007/10/31">
+  <psdyn:Status>
+    <pscat:StatusCategory xmlns:pscat="http://www.hp.com/schemas/imaging/con/ledm/productstatuscategories/2007/10/31">ready</pscat:StatusCategory>
+  </psdyn:Status>
+  <psdyn:AlertTable>
+    <psdyn:Alert>
+      <ad:ProductStatusAlertID>inkLow</ad:ProductStatusAlertID>
+      <ad:Severity>Warning</ad:Severity>
+      <ad:Color>cyanMagentaYellow</ad:Color>
+    </psdyn:Alert>
+  </psdyn:AlertTable>
+</psdyn:ProductStatusDyn>
