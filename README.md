@@ -29,7 +29,7 @@ AirPrint over USB is impossible on this printer, what failed, and what works.
 ## Install
 
 ```sh
-git clone https://github.com/<owner>/hp-usb-mac-bridge.git
+git clone https://github.com/drbayukresna/hp-usb-mac-bridge.git
 cd hp-usb-mac-bridge
 scripts/install.sh          # installs to ~/.local/bin/hpbridge
 ```
