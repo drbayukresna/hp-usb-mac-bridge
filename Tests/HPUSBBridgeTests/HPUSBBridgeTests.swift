@@ -109,27 +109,49 @@ final class MockTransport: ByteTransport {
 // MARK: - LEDM documents
 
 @Suite struct LEDMParserTests {
-    @Test func consumablesSkipPrintheadWithoutLevel() throws {
+    @Test func consumablesSeparateTanksFromPrintheads() throws {
         let items = LEDMParsers.consumables(try XMLNodeView(data: fixture("ConsumableConfigDyn")))
-        #expect(items.map(\.label) == ["K", "CMY"])
-        #expect(items[0].color == "Black")
-        #expect(items[1].percentRemaining == 35)
-        #expect(items[1].bar == "[#######.............]")
+        let inks = items.filter { $0.kind == .ink }
+        let heads = items.filter { $0.kind == .printhead }
+        #expect(inks.map(\.label) == ["C", "M", "Y", "K"])
+        #expect(inks.allSatisfy { $0.percentRemaining == 100 && $0.stateDescription == "OK" })
+        #expect(heads.map(\.color) == ["Tri-color", "Black"])
+        #expect(heads.map(\.partNumber) == ["M0H50A", "X4E75A"])
+        #expect(heads.first?.stateDescription == "OK (genuine HP)")
     }
 
-    @Test func statusAndAlerts() throws {
+    @Test func barRendering() {
+        let c = Consumable(label: "C", color: "Cyan", percentRemaining: 35)
+        #expect(c.bar == "[#######.............]")
+    }
+
+    @Test func statusReadyWithoutAlerts() throws {
         let s = LEDMParsers.status(try XMLNodeView(data: fixture("ProductStatusDyn")))
         #expect(s.isReady)
-        #expect(s.alerts.first?.id == "inkLow")
-        #expect(s.alerts.first?.severity == "Warning")
+        #expect(s.alerts.isEmpty)
+    }
+
+    @Test func productInfoUsesFirmwareNotSchemaRevision() throws {
+        let info = LEDMParsers.productInfo(try XMLNodeView(data: fixture("ProductConfigDyn")))
+        #expect(info.makeAndModel == "Smart Tank 500 series")
+        #expect(info.productNumber == "4SR29A")
+        #expect(info.firmware == "POSPPLPP1N001.2330A.00")
+        #expect(info.firmwareDate == "2023-07-26")
+    }
+
+    @Test func internalPrintCapListsCleaningLevels() throws {
+        let jobs = try XMLNodeView(data: fixture("InternalPrintCap")).all("JobType").map(\.text)
+        for job in InternalPrintJob.allCases {
+            #expect(jobs.contains(job.rawValue), "\(job.rawValue) not offered by the captured printer")
+        }
     }
 
     @Test func scanCapabilities() throws {
         let caps = LEDMScanParsers.capabilities(try XMLNodeView(data: fixture("ScanCaps")))
         #expect(caps.maxWidth300 == 2550)
         #expect(caps.maxHeight300 == 3508)
-        #expect(caps.resolutions == [75, 200, 300, 600, 1200])
-        #expect(caps.colorModes.contains("Color8"))
+        #expect(caps.resolutions == [75, 100, 150, 200, 300, 400, 600, 1200])
+        #expect(caps.colorModes == ["Color8", "Gray8", "K1"])
     }
 
     @Test func readyPageBinaryURL() throws {

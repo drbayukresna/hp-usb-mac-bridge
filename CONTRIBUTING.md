@@ -5,9 +5,9 @@ and pull requests.
 
 ## Most wanted: hardware reports
 
-The LEDM features (scan, status, ink, maintenance) are written against HP's
-documented resource layout but still need confirmation on real printers. If
-you own a USB-only HP inkjet, please open an issue with:
+Everything is verified on the HP Smart Tank 500. Reports from **other**
+USB-only HP inkjets are what we need most. If you own one, please open an
+issue with:
 
 1. `hpbridge devices`
 2. `lpinfo -l -v | grep -A4 usb://HP` (the device ID line)

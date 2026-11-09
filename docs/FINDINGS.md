@@ -69,18 +69,35 @@ Macs that ever had Apple's HP driver package installed).
 
 `LEDMDIS` tells us the printer serves HP's *Low End Data Model* web services
 over its vendor interfaces. LEDM is plain HTTP/1.1 written to the bulk OUT
-endpoint and read from the bulk IN endpoint. Useful resources:
+endpoint and read from the bulk IN endpoint — **verified on the Smart Tank
+500**: interface `FF/04/01` (#2) answers every request below. No driver,
+entitlement or root access is needed; `IOUSBHostInterface` can open the
+interface from an ordinary process.
+
+Resources confirmed on firmware `POSPPLPP1N001.2330A.00`:
 
 | Resource | Purpose |
 |----------|---------|
-| `/DevMgmt/DiscoveryTree.xml` | Index of everything the firmware supports |
-| `/DevMgmt/ProductConfigDyn.xml` | Model, serial, firmware |
-| `/DevMgmt/ProductStatusDyn.xml` | State + alerts |
-| `/DevMgmt/ConsumableConfigDyn.xml` | Ink levels |
-| `/DevMgmt/InternalPrintDyn.xml` | Cleaning / alignment / report pages (PUT) |
-| `/Scan/ScanCaps.xml`, `/Scan/Status.xml`, `/Scan/Jobs` | Flatbed scanning |
+| `/DevMgmt/DiscoveryTree.xml` | Index of everything the firmware supports (resource *and* manifest URIs) |
+| `/DevMgmt/ProductConfigDyn.xml` | Model, product number, serial. The **first** `Version/Revision` is the LEDM schema version; the firmware is under `ProductInformation/Version` |
+| `/DevMgmt/ProductStatusDyn.xml` | State (`ready`, …) + alert table |
+| `/DevMgmt/ConsumableConfigDyn.xml` | Ink tanks (`inkTank`, with an estimated `ConsumablePercentageLevelRemaining`) and printheads (`inkCartridge`, no level; part numbers M0H50A tri-colour, X4E75A black) |
+| `/DevMgmt/InternalPrintCap.xml` | Lists accepted internal jobs: `cleaningPage`, `cleaningPageLevel2`, `cleaningPageLevel3`, `cleaningVerificationPage`, `pqDiagnosticsPage`, `diagnosticsPage`, `configurationPage`, `extendedConfigurationPage`, … (no alignment page) |
+| `/DevMgmt/InternalPrintDyn.xml` | **POST** (not PUT — PUT returns `405`) an `InternalPrintDyn` document with a `JobType` → `201 Created`. A level-1 cleaning keeps the printer in `processing` for about 90 s, then it returns to `ready` |
+| `/Scan/ScanCaps` | Platen 2550×3508 (1/300"), 75–1200 dpi, `K1`/`Gray8`/`Color8`, JPEG or Raw. **No `.xml` suffix** on this firmware |
+| `/Scan/Status` | `ScannerState` must be `Idle` before a job |
+| `/Scan/Jobs` | POST `ScanSettings` → `201 Created`, `Location: /Jobs/JobList/<n>`; poll the job until a `PreScanPage` is `ReadyToUpload`, then GET its `BinaryURL` (JPEG) |
+| `/eSCL/eSclManifest.xml` | The firmware *also* implements eSCL (AirScan) — a future route to native Image Capture support |
 
-> **Status:** the LEDM code paths are implemented and unit-tested against
-> representative documents, but **have not yet been verified on real
-> hardware**. Please run `hpbridge -v discover` and `hpbridge -v status` on
-> your printer and report the output (see CONTRIBUTING.md).
+A 150 dpi A4 colour scan completes in about 6 seconds and returns a ~38 KB JPEG.
+
+## 6. macOS quirk worth knowing
+
+`IOServiceGetMatchingServices` with an `IOUSBHostDevice` matching dictionary
+that contains `idVendor` returns **no results** on macOS 27, even though the
+same approach works for `IOUSBHostInterface`. `hpbridge` therefore enumerates
+all `IOUSBHostDevice` services and filters on `idVendor` itself.
+
+> **Verified:** `hpbridge clean --level 1` runs a printhead cleaning cycle.
+> The report jobs (`maintenance pq-report`, …) use the same request and are
+> expected to work, but were not printed during testing to save paper and ink.

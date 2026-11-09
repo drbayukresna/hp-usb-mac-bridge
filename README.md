@@ -11,9 +11,9 @@ software, and macOS falls back to a black-and-white "Generic PCL" driver.
 | Feature | How | Status |
 |---------|-----|--------|
 | 🖨️ Colour printing, A4/F4/photo sizes, up to 1200 dpi | Configures CUPS with a compatible PCL3GUI driver | ✅ Verified on Smart Tank 500 |
-| 📄 Flatbed scanning to PDF / JPEG | HP LEDM protocol over USB | 🧪 Implemented, needs hardware testing |
-| 🔋 Printer status and ink levels | HP LEDM | 🧪 Implemented, needs hardware testing |
-| 🧽 Printhead cleaning, alignment, quality report | HP LEDM internal print jobs | 🧪 Implemented, needs hardware testing |
+| 📄 Flatbed scanning to PDF / JPEG, 75–1200 dpi | HP LEDM protocol over USB | ✅ Verified on Smart Tank 500 |
+| 🔋 Printer status, ink tanks and printheads | HP LEDM | ✅ Verified on Smart Tank 500 |
+| 🧽 Printhead cleaning (3 levels), quality / diagnostics reports | HP LEDM internal print jobs | ✅ Cleaning verified on Smart Tank 500 |
 
 Read [docs/FINDINGS.md](docs/FINDINGS.md) for the full investigation: why
 AirPrint over USB is impossible on this printer, what failed, and what works.
@@ -44,8 +44,10 @@ hpbridge ink                           # estimated ink levels
 hpbridge scan                          # A4 colour 300 dpi -> ~/Desktop/Scan <date>.pdf
 hpbridge scan --gray --dpi 200 --pages 5 -o contract.pdf
 hpbridge scan --paper 4x6 --dpi 600 --photo -o photo.jpg
+hpbridge info                          # model, product number, firmware
 hpbridge clean                         # printhead cleaning, level 1 (2 and 3 are deeper)
 hpbridge maintenance pq-report         # print-quality diagnostics page
+hpbridge maintenance verify-clean      # cleaning verification page
 ```
 
 Add `-v` to any command to see the USB/HTTP conversation.
@@ -61,7 +63,7 @@ Add `-v` to any command to see the USB/HTTP conversation.
 
 | Printer | USB ID | Print | Scan / status / maintenance |
 |---------|--------|-------|-----------------------------|
-| HP Smart Tank 500 series | 03f0:2b54 | ✅ | 🧪 |
+| HP Smart Tank 500 series | 03f0:2b54 | ✅ | ✅ |
 
 Other HP inkjets whose device ID lists `PCL3GUI` and `LEDMDIS:USB#...` are
 likely to work. `hpbridge setup-print --ppd <file>` lets you try another PPD.
@@ -97,8 +99,8 @@ valuable contribution right now.
 
 `hpbridge` membuat printer HP yang hanya punya koneksi USB, seperti **HP Smart
 Tank 500**, bisa dipakai penuh di macOS tanpa software HP: cetak berwarna
-(sudah terbukti), serta scan, status tinta, dan pembersihan printhead (sudah
-diimplementasikan, menunggu uji di printer asli). Jalankan
+, scan ke PDF/JPEG, serta status printer dan tinta (semuanya sudah diuji di
+printer asli). Pembersihan printhead juga sudah teruji. Jalankan
 `hpbridge setup-print --test` untuk mulai mencetak.
 
 ## License

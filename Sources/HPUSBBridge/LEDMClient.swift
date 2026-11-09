@@ -85,7 +85,7 @@ public final class LEDMClient {
         <ipdyn:JobType>\(XMLEscape.escape(job.rawValue))</ipdyn:JobType>
         </ipdyn:InternalPrintDyn>
         """
-        let r = try http.request("PUT", "/DevMgmt/InternalPrintDyn.xml",
+        let r = try http.request("POST", "/DevMgmt/InternalPrintDyn.xml",
                                  body: Data(body.utf8), contentType: "text/xml")
         guard r.isSuccess else {
             throw HTTPError.unexpectedStatus(r.status, r.reason, path: "/DevMgmt/InternalPrintDyn.xml (\(job.rawValue))")
@@ -101,23 +101,26 @@ public final class LEDMClient {
 }
 
 public enum InternalPrintJob: String, CaseIterable, Sendable {
+    // Job types verified in /DevMgmt/InternalPrintCap.xml of an HP Smart Tank 500.
     case cleaning = "cleaningPage"
     case cleaningLevel2 = "cleaningPageLevel2"
     case cleaningLevel3 = "cleaningPageLevel3"
-    case alignment = "alignmentPage"
+    case cleaningVerification = "cleaningVerificationPage"
     case printQualityDiagnostics = "pqDiagnosticsPage"
+    case diagnostics = "diagnosticsPage"
     case configuration = "configurationPage"
-    case selfTest = "selfTestPage"
+    case extendedConfiguration = "extendedConfigurationPage"
 
     public var displayName: String {
         switch self {
         case .cleaning: return "Printhead cleaning (level 1)"
         case .cleaningLevel2: return "Printhead cleaning (level 2)"
         case .cleaningLevel3: return "Printhead cleaning (level 3)"
-        case .alignment: return "Printhead alignment page"
+        case .cleaningVerification: return "Cleaning verification page"
         case .printQualityDiagnostics: return "Print quality diagnostics page"
+        case .diagnostics: return "Diagnostics page"
         case .configuration: return "Configuration page"
-        case .selfTest: return "Self-test page"
+        case .extendedConfiguration: return "Extended configuration page"
         }
     }
 }
@@ -148,6 +151,22 @@ public struct Consumable: Sendable {
     public var percentRemaining: Int?
     public var state: String?
     public var type: String?
+    public var kind: Kind = .ink
+    public var partNumber: String?
+
+    public enum Kind: String, Sendable { case ink, printhead, other }
+
+    /// Human readable state, e.g. "newGenuineHP" -> "OK (genuine HP)".
+    public var stateDescription: String? {
+        guard let state else { return nil }
+        switch state {
+        case "ok": return "OK"
+        case "newGenuineHP", "genuineHP", "usedGenuineHP": return "OK (genuine HP)"
+        case "low", "veryLow", "veryVeryLow": return "Low"
+        case "out", "empty": return "Empty"
+        default: return state
+        }
+    }
 
     public var bar: String {
         guard let p = percentRemaining else { return "[ unknown ]" }
@@ -160,6 +179,7 @@ public struct ProductInfo: Sendable {
     public var makeAndModel: String?
     public var serialNumber: String?
     public var firmware: String?
+    public var firmwareDate: String?
     public var productNumber: String?
 }
 
@@ -167,12 +187,11 @@ public struct ProductInfo: Sendable {
 
 public enum LEDMParsers {
     public static func discoveryResources(_ xml: XMLNodeView) -> [DiscoveryResource] {
-        xml.all("SupportedTree").compactMap { tree in
-            guard let path = tree.value("ResourceURI") else { return nil }
-            return DiscoveryResource(type: tree.value("ResourceType") ?? "", path: path)
-        } + xml.all("SupportedIfc").compactMap { ifc in
-            guard let path = ifc.value("ResourceURI") else { return nil }
-            return DiscoveryResource(type: ifc.value("ResourceType") ?? "", path: path)
+        // SupportedTree entries carry a ResourceURI; SupportedIfc entries (service
+        // manifests such as Scan, eSCL or InternalPrint) carry a ManifestURI.
+        (xml.all("SupportedTree") + xml.all("SupportedIfc")).compactMap { entry in
+            guard let path = entry.value("ResourceURI") ?? entry.value("ManifestURI") else { return nil }
+            return DiscoveryResource(type: entry.value("ResourceType") ?? "", path: path)
         }
     }
 
@@ -187,25 +206,39 @@ public enum LEDMParsers {
     }
 
     public static func consumables(_ xml: XMLNodeView) -> [Consumable] {
-        xml.all("ConsumableInfo").compactMap { info in
+        xml.all("ConsumableInfo").map { info in
             let label = info.value("ConsumableLabelCode") ?? info.value("ConsumableTypeEnum") ?? "?"
             let typeEnum = info.value("ConsumableTypeEnum")
-            if let t = typeEnum?.lowercased(), t.contains("printhead") && info.value("ConsumablePercentageLevelRemaining") == nil {
-                return nil
-            }
             let pct = info.value("ConsumablePercentageLevelRemaining").flatMap { Int($0) }
+            let life = info.first("ConsumableLifeState")
+            // On ink-tank printers the tanks are "inkTank" and the printheads are
+            // reported as "inkCartridge" without a level.
+            let kind: Consumable.Kind
+            switch typeEnum?.lowercased() {
+            case "inktank": kind = .ink
+            case "printhead": kind = .printhead
+            case "inkcartridge": kind = pct == nil ? .printhead : .ink
+            default: kind = pct == nil ? .other : .ink
+            }
             return Consumable(label: label,
                               color: colorName(for: label),
                               percentRemaining: pct,
-                              state: info.value("ConsumableState") ?? info.value("ConsumableLifeState"),
-                              type: typeEnum)
+                              state: life?.value("MeasuredQuantityState") ?? life?.value("ConsumableState")
+                                  ?? info.value("ConsumableState"),
+                              type: typeEnum,
+                              kind: kind,
+                              partNumber: info.value("ConsumableSelectibilityNumber"))
         }
     }
 
     public static func productInfo(_ xml: XMLNodeView) -> ProductInfo {
         ProductInfo(makeAndModel: xml.value("MakeAndModel") ?? xml.value("MakeAndModelBase"),
                     serialNumber: xml.value("SerialNumber"),
-                    firmware: xml.value("Revision") ?? xml.value("FirmwareRevision"),
+                    // The first Version/Revision in the document is the LEDM schema version;
+                    // the firmware lives under ProductInformation.
+                    firmware: xml.first("ProductInformation")?.first("Version")?.value("Revision")
+                        ?? xml.value("FirmwareRevision"),
+                    firmwareDate: xml.first("ProductInformation")?.first("Version")?.value("Date"),
                     productNumber: xml.value("ProductNumber"))
     }
 

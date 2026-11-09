@@ -236,14 +236,11 @@ public final class USBBulkTransport: ByteTransport {
 
     /// Lists HP USB devices currently attached: (productID, product name, serial).
     public static func findDevices(vendorID: Int = hpVendorID, productID: Int? = nil) -> [USBDeviceInfo] {
-        let matching = IOUSBHostDevice.__createMatchingDictionary(
-            withVendorID: NSNumber(value: vendorID),
-            productID: productID.map { NSNumber(value: $0) },
-            bcdDevice: nil, deviceClass: nil, deviceSubclass: nil, deviceProtocol: nil,
-            speed: nil, productIDArray: nil
-        )
+        // Matching on idVendor directly in the dictionary returns nothing for
+        // IOUSBHostDevice on recent macOS, so enumerate all devices and filter.
         var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching.takeRetainedValue(), &iterator) == KERN_SUCCESS else { return [] }
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("IOUSBHostDevice"), &iterator) == KERN_SUCCESS
+        else { return [] }
         defer { IOObjectRelease(iterator) }
         var result: [USBDeviceInfo] = []
         while case let service = IOIteratorNext(iterator), service != 0 {
@@ -251,9 +248,12 @@ public final class USBBulkTransport: ByteTransport {
             func prop(_ key: String) -> Any? {
                 IORegistryEntryCreateCFProperty(service, key as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue()
             }
+            guard let vid = prop("idVendor") as? Int, vid == vendorID else { continue }
+            let pid = (prop("idProduct") as? Int) ?? 0
+            if let productID, pid != productID { continue }
             result.append(USBDeviceInfo(
-                vendorID: (prop("idVendor") as? Int) ?? vendorID,
-                productID: (prop("idProduct") as? Int) ?? 0,
+                vendorID: vid,
+                productID: pid,
                 name: (prop("USB Product Name") as? String) ?? (prop("kUSBProductString") as? String) ?? "HP device",
                 serial: (prop("USB Serial Number") as? String) ?? (prop("kUSBSerialNumberString") as? String)
             ))

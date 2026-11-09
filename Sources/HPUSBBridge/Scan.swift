@@ -3,8 +3,8 @@
 // LEDM flatbed scanning.
 //
 // Flow (all over the LEDM USB interface):
-//   GET  /Scan/ScanCaps.xml            -> platen size and supported resolutions
-//   GET  /Scan/Status.xml              -> scanner must be "Idle"
+//   GET  /Scan/ScanCaps                -> platen size and supported resolutions
+//   GET  /Scan/Status                  -> scanner must be "Idle"
 //   POST /Scan/Jobs  (ScanSettings)    -> 201 Created, Location: /Jobs/JobList/<n>
 //   GET  <job>                         -> poll until a page is "ReadyToUpload" and has a BinaryURL
 //   GET  <BinaryURL>                   -> the page image (JPEG)
@@ -81,12 +81,12 @@ public final class LEDMScanner {
     public init(client: LEDMClient) { self.client = client }
 
     public func capabilities() throws -> ScanCapabilities {
-        let r = try client.http.get("/Scan/ScanCaps.xml")
+        let r = try client.http.get("/Scan/ScanCaps")
         return LEDMScanParsers.capabilities(try XMLNodeView(data: r.body))
     }
 
     public func scannerState() throws -> String {
-        let r = try client.http.get("/Scan/Status.xml")
+        let r = try client.http.get("/Scan/Status")
         return try XMLNodeView(data: r.body).value("ScannerState") ?? "Unknown"
     }
 

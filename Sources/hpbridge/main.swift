@@ -22,7 +22,8 @@ COMMANDS
   scan [-o FILE] [--dpi N] [--gray] [--paper a4|letter|legal|f4|a5|4x6|5x7|max]
        [--pages N] [--photo]  Scan from the flatbed to PDF (or .jpg for one page)
   clean [--level 1|2|3]       Run a printhead cleaning cycle
-  maintenance <job>           Run an internal job: alignment, pq-report, config-page, self-test
+  maintenance <job>           Print a report: pq-report, verify-clean, diagnostics,
+                              config-page, extended-config
   discover                    Dump the LEDM resources the firmware advertises
   raw GET|PUT|POST PATH [--body FILE]
                               Send a raw LEDM request (for developers)
@@ -104,12 +105,25 @@ func cmdStatus() throws {
 func cmdInk() throws {
     let items = try openClient().consumables()
     if items.isEmpty { print("The printer did not report any consumables.") }
-    for c in items {
-        let pct = c.percentRemaining.map { "\($0)%" } ?? "n/a"
-        print("\(c.color.padding(toLength: 12, withPad: " ", startingAt: 0)) \(c.bar) \(pct)"
-              + (c.state.map { "  \($0)" } ?? ""))
+    let inks = items.filter { $0.kind == .ink }
+    let heads = items.filter { $0.kind == .printhead }
+    if !inks.isEmpty {
+        print("Ink")
+        for c in inks {
+            let pct = c.percentRemaining.map { "\($0)%" } ?? "n/a"
+            print("  \(c.color.padding(toLength: 10, withPad: " ", startingAt: 0)) \(c.bar) \(pct.padding(toLength: 5, withPad: " ", startingAt: 0))"
+                  + (c.stateDescription.map { " \($0)" } ?? ""))
+        }
     }
-    print("\nNote: on ink-tank printers this is an estimate; check the tank windows for the real level.")
+    if !heads.isEmpty {
+        print("Printheads")
+        for c in heads {
+            print("  \(c.color.padding(toLength: 10, withPad: " ", startingAt: 0)) \(c.stateDescription ?? "unknown")"
+                  + (c.partNumber.map { "  (part \($0))" } ?? ""))
+        }
+    }
+    print("\nInk-tank printers cannot measure the tanks; percentages are estimates")
+    print("reset at each refill. The tank windows show the real level.")
 }
 
 func cmdInfo() throws {
@@ -117,7 +131,7 @@ func cmdInfo() throws {
     print("Model:    \(info.makeAndModel ?? "?")")
     print("Product:  \(info.productNumber ?? "?")")
     print("Serial:   \(info.serialNumber ?? "?")")
-    print("Firmware: \(info.firmware ?? "?")")
+    print("Firmware: \(info.firmware ?? "?")" + (info.firmwareDate.map { " (\($0))" } ?? ""))
 }
 
 func cmdDiscover() throws {
@@ -148,7 +162,7 @@ func cmdScan() throws {
         ?? (FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop/\(defaultName)").path))
 
     let scanner = LEDMScanner(client: try LEDMClient.openFirstResponding(
-        candidates: [.ledmScan, .ledm], probePath: "/Scan/ScanCaps.xml", verbose: verbose))
+        candidates: [.ledmScan, .ledm], probePath: "/Scan/ScanCaps", verbose: verbose))
     scanner.log = { stderr($0) }
 
     var images: [Data] = []
@@ -192,12 +206,14 @@ func cmdMaintenance() throws {
     guard let name = args.first else { throw CLIError(description: "maintenance needs a job name") }
     args.removeFirst()
     let map: [String: InternalPrintJob] = [
-        "alignment": .alignment, "align": .alignment,
         "pq-report": .printQualityDiagnostics, "quality": .printQualityDiagnostics,
-        "config-page": .configuration, "self-test": .selfTest,
+        "verify-clean": .cleaningVerification,
+        "diagnostics": .diagnostics,
+        "config-page": .configuration,
+        "extended-config": .extendedConfiguration,
     ]
     guard let job = map[name] else {
-        throw CLIError(description: "Unknown job '\(name)'. Use: alignment, pq-report, config-page, self-test")
+        throw CLIError(description: "Unknown job '\(name)'. Use: pq-report, verify-clean, diagnostics, config-page, extended-config")
     }
     try runMaintenance(job)
 }
