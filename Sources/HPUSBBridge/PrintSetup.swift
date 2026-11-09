@@ -48,6 +48,13 @@ public enum PrintSetupError: Error, CustomStringConvertible {
     }
 }
 
+public struct ExistingQueue: Sendable, Hashable {
+    public var name: String
+    public var deviceURI: String
+    public var driver: String?
+    public var isDefault: Bool
+}
+
 public struct PrintQueueConfig: Sendable {
     public var queueName: String
     public var description: String
@@ -110,6 +117,33 @@ public enum PrintSetup {
         if config.makeDefault {
             _ = try run("/usr/bin/lpoptions", ["-d", config.queueName])
         }
+    }
+
+    /// CUPS queues that print to `deviceURI` (matched without the query string),
+    /// with the driver (PPD NickName) each one uses.
+    public static func existingQueues(forDeviceURI deviceURI: String) -> [ExistingQueue] {
+        guard let out = try? run("/usr/bin/lpstat", ["-v"]) else { return [] }
+        let wanted = deviceURI.split(separator: "?").first.map(String.init) ?? deviceURI
+        let defaultQueue = (try? run("/usr/bin/lpstat", ["-d"]))?
+            .components(separatedBy: ": ").last?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return out.split(separator: "\n").compactMap { line in
+            // "device for NAME: URI"
+            guard line.hasPrefix("device for "), let colon = line.range(of: ": ") else { return nil }
+            let name = String(line[line.index(line.startIndex, offsetBy: 11)..<colon.lowerBound])
+            let uri = String(line[colon.upperBound...])
+            guard (uri.split(separator: "?").first.map(String.init) ?? uri) == wanted else { return nil }
+            let ppd = try? String(contentsOfFile: "/etc/cups/ppd/\(name).ppd", encoding: .isoLatin1)
+            let nick = ppd?.split(separator: "\n")
+                .first { $0.hasPrefix("*NickName:") }
+                .map { $0.dropFirst("*NickName:".count).trimmingCharacters(in: CharacterSet(charactersIn: " \"")) }
+            return ExistingQueue(name: name, deviceURI: uri, driver: nick, isDefault: name == defaultQueue)
+        }
+    }
+
+    /// True when the queue uses a driver known to give monochrome-only output.
+    public static func isLimitedDriver(_ driver: String?) -> Bool {
+        guard let d = driver?.lowercased() else { return false }
+        return d.contains("generic pcl") || d.contains("generic postscript")
     }
 
     public static func printTestPage(queue: String) throws -> String {

@@ -6,7 +6,8 @@ HP no longer provides macOS drivers for several USB-only models such as the
 **HP Smart Tank 500 series**. HP Smart can't see them, HP Easy Start finds no
 software, and macOS falls back to a black-and-white "Generic PCL" driver.
 
-`hpbridge` gives these printers their features back:
+**HP Bridge** (a Mac app) and `hpbridge` (its command-line twin) give these
+printers their features back:
 
 | Feature | How | Status |
 |---------|-----|--------|
@@ -18,15 +19,76 @@ software, and macOS falls back to a black-and-white "Generic PCL" driver.
 Read [docs/FINDINGS.md](docs/FINDINGS.md) for the full investigation: why
 AirPrint over USB is impossible on this printer, what failed, and what works.
 
-## Requirements
+## The gap it fills in the ecosystem
 
-* macOS 13 or newer (Apple Silicon or Intel)
+**Working printers, no supported way to use them from a Mac.** Low-cost
+USB-only inkjets such as the HP Smart Tank 500 series are common in homes,
+schools and small offices. On current macOS every official path is closed:
+
+* **HP Smart** only discovers networked/AirPrint printers, so a USB-only
+  model never appears.
+* **HP Easy Start** reports that no software is available for the product.
+* **Apple's "HP Printer Drivers" package** refuses to install on macOS newer
+  than 15, and never included these models anyway.
+
+**AirPrint is not a fallback here.** Driverless printing over USB needs an
+IPP-over-USB interface, which these printers don't have. macOS therefore
+falls back to *Generic PCL Laser Printer*: black and white, 300 dpi, Letter
+paper, no scanning, no ink status, no maintenance.
+
+**Linux solved this years ago; macOS never got an equivalent.** On Linux,
+HP's open-source HPLIP drives these printers natively: printing through
+`hpcups`, and scanning and status over HP's LEDM web services on the USB
+cable. HPLIP is Linux-only, and nothing on macOS speaks LEDM over USB. Mac
+owners are left choosing between a crippled black-and-white printer, keeping
+a Windows PC around, or replacing hardware that still works.
+
+**What this project adds:**
+
+* **Colour printing** by pairing the printer with a PCL3GUI renderer macOS
+  already ships, instead of inventing a new driver.
+* **Scanning, ink and printhead status, and cleaning** by speaking LEDM
+  directly over USB from an ordinary app — no kernel extension, no root, no
+  HP software, no background daemon.
+* **A plain Mac app** for people who never want to open Terminal, plus a CLI
+  and a Swift library for scripts and other projects.
+* **Documented findings** ([docs/FINDINGS.md](docs/FINDINGS.md)) — device
+  IDs, USB interfaces, LEDM endpoints, and the approaches that do *not* work —
+  so support for more models can be added by others.
+
+**What it is not:** an HP product, a replacement for HP's software on printers
+HP still supports, or a way around anything HP or Apple restricts. It uses
+public interfaces the printer itself advertises.
+
+## Download the app (no coding needed)
+
+1. Download **HP-Bridge-x.y.z.dmg** from the
+   [Releases](https://github.com/drbayukresna/hp-usb-mac-bridge/releases) page.
+2. Open it and drag **HP Bridge** into **Applications**.
+3. The first time, right-click **HP Bridge** → **Open** → **Open**. (The app
+   isn't notarized by Apple yet, so macOS asks once.)
+4. Plug in the printer. HP Bridge finds it automatically.
+
+| Section | What you can do |
+|---------|-----------------|
+| **Overview** | Live printer state, animated ink-tank levels, printhead health, model and firmware |
+| **Scan** | Document / Photo / Small-file presets, colour or B&W, A4–photo sizes, 150–1200 dpi; scan several pages, reorder or remove them, save as one PDF or as JPEGs, drag pages into other apps |
+| **Printing** | Detects a black-and-white "Generic" setup and switches it to colour in one click, prints a test page |
+| **Maintenance** | Guided steps, three cleaning levels with confirmation, quality and diagnostics reports, live progress |
+
+The app is available in English and Bahasa Indonesia and follows your Mac's
+language. It needs macOS 14 Sonoma or newer on an Apple Silicon Mac (an Intel
+build is planned).
+
+## Requirements (command line / building from source)
+
+* macOS 14 or newer
 * Swift 5.9+ (Xcode or the Command Line Tools: `xcode-select --install`)
 * For printing: Rosetta 2 on Apple Silicon and HP's PPD files in
   `/Library/Printers/PPDs/Contents/Resources` (from Apple's HP Printer Drivers
   package)
 
-## Install
+## Install the command-line tool
 
 ```sh
 git clone https://github.com/drbayukresna/hp-usb-mac-bridge.git
@@ -75,6 +137,7 @@ Please report results!
 swift build
 scripts/test.sh              # unit tests, no printer needed
 .build/debug/hpbridge -v discover
+scripts/build-app.sh         # dist/HP Bridge.app + dist/HP-Bridge-<version>.dmg
 ```
 
 Project layout:
@@ -88,6 +151,8 @@ Sources/HPUSBBridge/
   PDFWriter.swift       JPEG pages -> PDF
   PrintSetup.swift      CUPS queue creation
 Sources/hpbridge/       command line tool
+Sources/HPBridgeApp/    the SwiftUI Mac app
+AppBundle/              app icon and translations (en, id)
 Tests/                  unit tests with representative LEDM documents
 docs/FINDINGS.md        protocol and driver research
 ```

@@ -21,11 +21,16 @@ public enum PDFWriterError: Error, CustomStringConvertible {
 public enum PDFWriter {
     /// Writes `pages` (JPEG data) to `url`, sizing each PDF page from the image's DPI.
     public static func write(pages: [Data], dpi: Int, to url: URL) throws {
+        try write(pages: pages.map { ($0, dpi) }, to: url)
+    }
+
+    /// Writes pages that may have been scanned at different resolutions.
+    public static func write(pages: [(jpeg: Data, dpi: Int)], to url: URL) throws {
         guard let consumer = CGDataConsumer(url: url as CFURL),
               let context = CGContext(consumer: consumer, mediaBox: nil, nil)
         else { throw PDFWriterError.cannotCreate(url.path) }
 
-        for (index, data) in pages.enumerated() {
+        for (index, (data, dpi)) in pages.enumerated() {
             guard let source = CGImageSourceCreateWithData(data as CFData, nil),
                   let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
             else { throw PDFWriterError.badImage(index) }

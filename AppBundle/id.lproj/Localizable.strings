@@ -1,0 +1,166 @@
+/* HP Bridge — Bahasa Indonesia */
+
+/* Status */
+"Ready" = "Siap";
+"Working…" = "Sedang bekerja…";
+"Scanning…" = "Memindai…";
+"Sleeping" = "Mode hemat daya";
+"Ink system problem" = "Masalah sistem tinta";
+"Connecting…" = "Menghubungkan…";
+"Unknown" = "Tidak diketahui";
+"OK" = "Baik";
+"OK (genuine HP)" = "Baik (asli HP)";
+"Low" = "Hampir habis";
+"Empty" = "Habis";
+
+/* Colours */
+"Cyan" = "Sian";
+"Magenta" = "Magenta";
+"Yellow" = "Kuning";
+"Black" = "Hitam";
+"Tri-color" = "Tiga warna";
+"Estimated level. Check the tank window for the real level." = "Perkiraan level. Lihat jendela tangki untuk level yang sebenarnya.";
+"%@ ink, about %lld percent" = "Tinta %@, sekitar %lld persen";
+
+/* General */
+"Dismiss" = "Tutup";
+"Looking for your printer…" = "Mencari printer Anda…";
+"No printer connected" = "Printer belum tersambung";
+"Switch the printer on" = "Nyalakan printer";
+"Connect it to this Mac with a USB cable" = "Sambungkan ke Mac ini dengan kabel USB";
+"Wait a few seconds — it appears here automatically" = "Tunggu beberapa detik — printer akan muncul di sini secara otomatis";
+"Printer" = "Printer";
+"Refresh" = "Muat ulang";
+"Scan" = "Scan";
+"HP Bridge on GitHub" = "HP Bridge di GitHub";
+"Report a problem" = "Laporkan masalah";
+"Overview" = "Ringkasan";
+"Printing" = "Cetak";
+"Maintenance" = "Perawatan";
+"Not connected" = "Tidak tersambung";
+"Connected via USB" = "Tersambung lewat USB";
+"Done" = "Selesai";
+"Saved" = "Tersimpan";
+"Close" = "Tutup";
+"Cancel" = "Batal";
+"Print" = "Cetak";
+
+/* Overview */
+"Ink" = "Tinta";
+"Ink-tank printers can't measure the tanks; levels are estimates reset at each refill. The tank windows show the real level." = "Printer tangki tinta tidak bisa mengukur isi tangki; level ini perkiraan yang direset setiap isi ulang. Jendela tangki menunjukkan level yang sebenarnya.";
+"Printheads" = "Printhead";
+"Quick actions" = "Aksi cepat";
+"Scan a document" = "Scan dokumen";
+"Set up printing" = "Siapkan pencetakan";
+"Fix faded or streaky prints" = "Perbaiki cetakan pudar atau bergaris";
+"About this printer" = "Tentang printer ini";
+"Model" = "Model";
+"Product number" = "Nomor produk";
+"Firmware" = "Firmware";
+"Serial number" = "Nomor seri";
+"Couldn't read the printer" = "Gagal membaca printer";
+
+/* Printing */
+"Print in full colour from any app, with A4, F4 and photo sizes." = "Cetak berwarna penuh dari aplikasi apa pun, dengan ukuran A4, F4, dan foto.";
+"What you get" = "Yang Anda dapatkan";
+"Full colour" = "Berwarna penuh";
+"Instead of black and white only" = "Bukan hanya hitam-putih";
+"A4, F4 (8.5×13), Letter, Legal, envelopes" = "A4, F4 (8,5×13), Letter, Legal, amplop";
+"A4 is the default" = "A4 jadi ukuran bawaan";
+"Photo paper and 4×6 / 5×7 photos" = "Kertas foto dan foto 4×6 / 5×7";
+"Choose “Photo Paper” in the Print dialog" = "Pilih “Photo Paper” di dialog Cetak";
+"Draft to Best quality, up to 1200 dpi" = "Kualitas Draf hingga Terbaik, sampai 1200 dpi";
+"Draft saves ink for everyday pages" = "Draf menghemat tinta untuk dokumen harian";
+"How it works" = "Cara kerjanya";
+"HP no longer ships a Mac driver for this printer. HP Bridge sets it up with a compatible HP colour driver that macOS already has (HP DeskJet 2640 series), which speaks the printer's native language. Nothing is installed in the background." = "HP tidak lagi menyediakan driver Mac untuk printer ini. HP Bridge memasangnya dengan driver warna HP yang kompatibel dan sudah ada di macOS (HP DeskJet 2640 series), yang memakai bahasa asli printer ini. Tidak ada yang dipasang diam-diam di latar belakang.";
+"Checking print settings…" = "Memeriksa pengaturan cetak…";
+"Printing is set up" = "Pencetakan sudah siap";
+"Printer name in the Print dialog: %@" = "Nama printer di dialog Cetak: %@";
+"This is your default printer" = "Ini printer bawaan Anda";
+"Print a test page" = "Cetak halaman uji";
+"Repair" = "Perbaiki";
+"Recreate the print queue with the recommended settings" = "Buat ulang antrean cetak dengan pengaturan yang disarankan";
+"Printers & Scanners" = "Printer & Pemindai";
+"Your printer only prints in black and white" = "Printer Anda hanya mencetak hitam-putih";
+"“%@” uses the “%@” driver: monochrome, 300 dpi, Letter paper." = "“%@” memakai driver “%@”: hitam-putih, 300 dpi, kertas Letter.";
+"Switch to colour printing" = "Beralih ke cetak berwarna";
+"Printing isn't set up yet" = "Pencetakan belum disiapkan";
+"One click and you can print in colour from any app." = "Sekali klik, Anda bisa mencetak berwarna dari aplikasi apa pun.";
+"Make it my default printer" = "Jadikan printer bawaan";
+"Print a colour test page" = "Cetak halaman uji berwarna";
+"Printing is ready" = "Pencetakan siap";
+"A colour test page is on its way. Choose “%@” in any Print dialog." = "Halaman uji berwarna sedang dicetak. Pilih “%@” di dialog Cetak mana pun.";
+"Choose “%@” in any Print dialog." = "Pilih “%@” di dialog Cetak mana pun.";
+"Couldn't set up printing" = "Gagal menyiapkan pencetakan";
+"Test page sent" = "Halaman uji dikirim";
+"It should come out of the printer in a few seconds." = "Halaman akan keluar dari printer dalam beberapa detik.";
+"Couldn't print a test page" = "Gagal mencetak halaman uji";
+
+/* Scan */
+"Place the page face down on the glass, top edge at the arrow." = "Letakkan halaman menghadap ke bawah di kaca, tepi atas di dekat tanda panah.";
+"Purpose" = "Kegunaan";
+"Document" = "Dokumen";
+"Photo" = "Foto";
+"Small file" = "File kecil";
+"Colour" = "Warna";
+"Black & white" = "Hitam-putih";
+"Paper size" = "Ukuran kertas";
+"Letter" = "Letter";
+"Photo 4×6 in" = "Foto 4×6 inci";
+"Photo 5×7 in" = "Foto 5×7 inci";
+"Whole glass" = "Seluruh kaca";
+"Quality" = "Kualitas";
+"Draft · 150 dpi" = "Draf · 150 dpi";
+"Standard · 300 dpi" = "Standar · 300 dpi";
+"High · 600 dpi" = "Tinggi · 600 dpi";
+"Maximum · 1200 dpi" = "Maksimal · 1200 dpi";
+"Higher quality takes longer and makes bigger files." = "Kualitas lebih tinggi butuh waktu lebih lama dan ukuran file lebih besar.";
+"Scan another page" = "Scan halaman berikutnya";
+"Your scanned pages appear here" = "Halaman hasil scan akan muncul di sini";
+"Scan several pages and save them together as one PDF." = "Scan beberapa halaman lalu simpan sekaligus menjadi satu PDF.";
+"%lld page(s)" = "%lld halaman";
+"Clear" = "Hapus semua";
+"Save as JPEG" = "Simpan sebagai JPEG";
+"Save as PDF" = "Simpan sebagai PDF";
+"Move earlier" = "Pindah ke depan";
+"Move later" = "Pindah ke belakang";
+"Remove page" = "Hapus halaman";
+"Double-click to enlarge. Drag to put the image in another app." = "Klik dua kali untuk memperbesar. Seret untuk memindahkan gambar ke aplikasi lain.";
+"Page %lld" = "Halaman %lld";
+"Page %lld · %lld dpi" = "Halaman %lld · %lld dpi";
+"Preparing the scanner…" = "Menyiapkan pemindai…";
+"Receiving the image…" = "Menerima gambar…";
+"Scan failed" = "Scan gagal";
+"Couldn't save the PDF" = "Gagal menyimpan PDF";
+"Save Here" = "Simpan di sini";
+"Couldn't save the images" = "Gagal menyimpan gambar";
+
+/* Maintenance */
+"Fix faded colours, streaks or missing dots." = "Perbaiki warna pudar, garis-garis, atau titik yang hilang.";
+"Recommended steps" = "Langkah yang disarankan";
+"Print a quality report to see which colours have gaps." = "Cetak laporan kualitas untuk melihat warna mana yang terputus.";
+"Run a standard cleaning, then print the report again." = "Jalankan pembersihan standar, lalu cetak laporannya lagi.";
+"Still gaps? Try a deep cleaning. Stop after 2–3 cleanings in a row and let the printer rest for a few hours." = "Masih terputus? Coba pembersihan mendalam. Berhenti setelah 2–3 kali berturut-turut dan biarkan printer istirahat beberapa jam.";
+"Cleaning" = "Pembersihan";
+"About 1½ minutes · uses a little ink" = "Sekitar 1½ menit · memakai sedikit tinta";
+"Use if the standard cleaning wasn't enough · uses more ink" = "Jika pembersihan standar belum cukup · memakai lebih banyak tinta";
+"Last resort · uses the most ink" = "Pilihan terakhir · memakai tinta paling banyak";
+"Reports" = "Laporan";
+"Colour blocks that show nozzle gaps" = "Blok warna yang menunjukkan nozzle terputus";
+"Check the result of a cleaning" = "Periksa hasil pembersihan";
+"Detailed printer health" = "Kesehatan printer secara rinci";
+"Start cleaning" = "Mulai membersihkan";
+"Make sure the printer is on and has plain paper loaded. The printer is busy until it finishes." = "Pastikan printer menyala dan berisi kertas biasa. Printer akan sibuk sampai proses selesai.";
+"Load plain A4 or Letter paper." = "Masukkan kertas biasa ukuran A4 atau Letter.";
+"This printer doesn't offer this over USB" = "Printer ini tidak menyediakan fitur ini lewat USB";
+"Keep the printer on and the cable connected." = "Biarkan printer menyala dan kabel tetap tersambung.";
+"%@ finished." = "%@ selesai.";
+"The printer refused the request" = "Printer menolak permintaan";
+"Standard cleaning" = "Pembersihan standar";
+"Deep cleaning" = "Pembersihan mendalam";
+"Intensive cleaning" = "Pembersihan intensif";
+"Cleaning check page" = "Halaman cek pembersihan";
+"Print quality report" = "Laporan kualitas cetak";
+"Diagnostics page" = "Halaman diagnostik";
+"Configuration page" = "Halaman konfigurasi";
+"Extended configuration page" = "Halaman konfigurasi lengkap";

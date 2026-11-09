@@ -5,7 +5,7 @@
 import Foundation
 import HPUSBBridge
 
-let version = "0.1.0"
+let version = "1.0.0"
 
 let usage = """
 hpbridge \(version) — use USB-only HP printers on macOS without HP software

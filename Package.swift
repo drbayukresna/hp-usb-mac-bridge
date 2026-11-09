@@ -8,9 +8,10 @@ import PackageDescription
 
 let package = Package(
     name: "hp-usb-mac-bridge",
-    platforms: [.macOS(.v13)],
+    platforms: [.macOS(.v14)],
     products: [
         .executable(name: "hpbridge", targets: ["hpbridge"]),
+        .executable(name: "HPBridge", targets: ["HPBridgeApp"]),
         .library(name: "HPUSBBridge", targets: ["HPUSBBridge"]),
     ],
     targets: [
@@ -24,6 +25,14 @@ let package = Package(
             ]
         ),
         .executableTarget(name: "hpbridge", dependencies: ["HPUSBBridge"]),
+        // The macOS app. Localizations and the icon live in AppBundle/ and are
+        // copied into HP Bridge.app by scripts/build-app.sh.
+        .executableTarget(
+            name: "HPBridgeApp",
+            dependencies: ["HPUSBBridge"],
+            path: "Sources/HPBridgeApp",
+            linkerSettings: [.linkedFramework("SwiftUI"), .linkedFramework("AppKit")]
+        ),
         .testTarget(
             name: "HPUSBBridgeTests",
             dependencies: ["HPUSBBridge"],

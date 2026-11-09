@@ -6,3 +6,4 @@ DerivedData/
 .DS_Store
 # Captures from real devices may contain serial numbers; review before committing.
 captures/
+dist/
