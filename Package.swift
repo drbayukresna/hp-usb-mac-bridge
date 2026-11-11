@@ -11,7 +11,9 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .executable(name: "hpbridge", targets: ["hpbridge"]),
-        .executable(name: "HPBridge", targets: ["HPBridgeApp"]),
+        // Not "HPBridge": on a case-insensitive disk that collides with "hpbridge"
+        // in the shared products folder and the two binaries overwrite each other.
+        .executable(name: "HPBridgeApp", targets: ["HPBridgeApp"]),
         .library(name: "HPUSBBridge", targets: ["HPUSBBridge"]),
     ],
     targets: [

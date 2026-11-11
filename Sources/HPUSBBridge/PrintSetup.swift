@@ -28,9 +28,17 @@ public struct PrinterModelProfile: Sendable {
     }
 }
 
+/// Something the Mac needs before the HP PCL3GUI driver can print.
+public enum PrintPrerequisite: Sendable, Equatable {
+    /// The PPD file is not installed (Apple's "HP Printer Drivers" package).
+    case hpDrivers(ppdPath: String)
+    /// Apple Silicon without Rosetta 2: HP's print filters are Intel-only.
+    case rosetta
+}
+
 public enum PrintSetupError: Error, CustomStringConvertible {
     case noPrinter
-    case ppdMissing(String)
+    case missingPrerequisites([PrintPrerequisite])
     case unknownModel(String)
     case command(String, Int32, String)
 
@@ -38,8 +46,27 @@ public enum PrintSetupError: Error, CustomStringConvertible {
         switch self {
         case .noPrinter:
             return "No USB HP printer is visible to CUPS. Switch it on, plug it in, and try again."
-        case let .ppdMissing(path):
-            return "Driver file not found: \(path). Install Apple's \"HP Printer Drivers\" package, or pass --ppd."
+        case let .missingPrerequisites(items):
+            var lines = ["Printing needs \(items.count == 1 ? "one thing" : "\(items.count) things") this Mac doesn't have yet:"]
+            for (i, item) in items.enumerated() {
+                switch item {
+                case let .hpDrivers(path):
+                    lines.append("""
+                    \(i + 1). Apple's "HP Printer Drivers" package (driver file not found: \(path)).
+                       Download HewlettPackardPrinterDrivers.dmg from \(PrintSetup.hpDriversDownloadURL)
+                       and run the installer inside it. On macOS newer than 15 the installer refuses;
+                       see "Installing the print driver" in the README to copy the driver by hand.
+                       Or pass --ppd with another PCL3GUI HP PPD.
+                    """)
+                case .rosetta:
+                    lines.append("""
+                    \(i + 1). Rosetta 2 (HP's print filters are Intel-only). Install it in Terminal with:
+                       softwareupdate --install-rosetta --agree-to-license
+                    """)
+                }
+            }
+            lines.append("Then run the printer setup again.")
+            return lines.joined(separator: "\n")
         case let .unknownModel(name):
             return "No tested driver profile for \"\(name)\". Pass --ppd with a PCL3GUI HP inkjet PPD and please report the result."
         case let .command(cmd, code, out):
@@ -66,6 +93,28 @@ public struct PrintQueueConfig: Sendable {
 
 public enum PrintSetup {
     public static let hpPPDDirectory = "/Library/Printers/PPDs/Contents/Resources"
+    public static let hpDriversDownloadURL = "https://support.apple.com/en-us/106385"
+    /// Present only when Rosetta 2 is installed.
+    static let rosettaRuntimePath = "/Library/Apple/usr/libexec/oah/libRosettaRuntime"
+
+    static var isAppleSilicon: Bool {
+        #if arch(arm64)
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// Everything missing before `ppdPath` can print, in install order.
+    static func missingPrerequisites(ppdPath: String,
+                                     isAppleSilicon: Bool = PrintSetup.isAppleSilicon,
+                                     fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) })
+        -> [PrintPrerequisite] {
+        var missing: [PrintPrerequisite] = []
+        if !fileExists(ppdPath) { missing.append(.hpDrivers(ppdPath: ppdPath)) }
+        if isAppleSilicon && !fileExists(rosettaRuntimePath) { missing.append(.rosetta) }
+        return missing
+    }
 
     /// USB HP devices as CUPS sees them: (uri, make-and-model).
     public static func cupsUSBDevices() throws -> [(uri: String, model: String)] {
@@ -94,7 +143,8 @@ public enum PrintSetup {
         } else {
             throw PrintSetupError.unknownModel(device.model)
         }
-        guard FileManager.default.fileExists(atPath: ppdPath) else { throw PrintSetupError.ppdMissing(ppdPath) }
+        let missing = missingPrerequisites(ppdPath: ppdPath)
+        guard missing.isEmpty else { throw PrintSetupError.missingPrerequisites(missing) }
         let name = queueName ?? defaultQueueName(for: model)
         return PrintQueueConfig(queueName: name,
                                 description: "HP \(model) (USB)",

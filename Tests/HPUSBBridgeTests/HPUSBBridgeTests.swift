@@ -104,6 +104,21 @@ final class MockTransport: ByteTransport {
     @Test func queueNameIsCUPSSafe() {
         #expect(PrintSetup.defaultQueueName(for: "Smart Tank 500 series") == "HP_Smart_Tank_500_USB")
     }
+
+    @Test func reportsMissingDriversAndRosettaTogether() {
+        let ppd = "/Library/Printers/PPDs/Contents/Resources/HP Deskjet 2640 series.ppd.gz"
+        let none = PrintSetup.missingPrerequisites(ppdPath: ppd, isAppleSilicon: true) { _ in false }
+        #expect(none == [.hpDrivers(ppdPath: ppd), .rosetta])
+        let text = PrintSetupError.missingPrerequisites(none).description
+        #expect(text.contains(PrintSetup.hpDriversDownloadURL))
+        #expect(text.contains("softwareupdate --install-rosetta"))
+    }
+
+    @Test func rosettaOnlyMattersOnAppleSilicon() {
+        let ppd = "/x.ppd.gz"
+        #expect(PrintSetup.missingPrerequisites(ppdPath: ppd, isAppleSilicon: false) { _ in false } == [.hpDrivers(ppdPath: ppd)])
+        #expect(PrintSetup.missingPrerequisites(ppdPath: ppd, isAppleSilicon: true) { _ in true }.isEmpty)
+    }
 }
 
 // MARK: - LEDM documents

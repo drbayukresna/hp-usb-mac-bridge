@@ -63,7 +63,11 @@ the printer accepts:
 
 `hpbridge setup-print` automates exactly this. Requirements: Rosetta 2 and the
 HP driver PPDs under `/Library/Printers/PPDs/Contents/Resources` (present on
-Macs that ever had Apple's HP driver package installed).
+Macs that ever had Apple's HP driver package installed). On macOS newer than
+15 the package's installer refuses to run, but copying its
+`Library/Printers/{PPDs,hp}` payload into `/Library/Printers` by hand works:
+verified colour output on macOS 27.2 (Apple Silicon, Rosetta 2). Steps are in
+the README under "Installing the print driver".
 
 ## 5. Scanning, status, ink and maintenance: LEDM
 

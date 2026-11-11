@@ -86,7 +86,43 @@ build is planned).
 * Swift 5.9+ (Xcode or the Command Line Tools: `xcode-select --install`)
 * For printing: Rosetta 2 on Apple Silicon and HP's PPD files in
   `/Library/Printers/PPDs/Contents/Resources` (from Apple's HP Printer Drivers
-  package)
+  package — see [Installing the print driver](#installing-the-print-driver))
+
+## Installing the print driver
+
+Colour printing uses HP's PCL3GUI driver from Apple's **HP Printer Drivers
+5.1.1** package. It is needed once per Mac, together with Rosetta 2 on Apple
+Silicon (HP's print filters are Intel-only):
+
+```sh
+softwareupdate --install-rosetta --agree-to-license   # Apple Silicon only
+```
+
+Download `HewlettPackardPrinterDrivers.dmg` from
+[Apple's support page](https://support.apple.com/en-us/106385).
+
+**macOS 15 and older:** open the DMG and run the installer.
+
+**macOS newer than 15:** the installer stops with *"This update requires
+macOS version 15.0 or earlier."* That is only a version check in the package;
+the driver itself still works (verified printing in colour on macOS 27.2).
+Copy the print-driver part of the package by hand:
+
+```sh
+hdiutil attach -nobrowse ~/Downloads/HewlettPackardPrinterDrivers.dmg
+pkgutil --check-signature /Volumes/HP_PrinterSupportManual/HewlettPackardPrinterDrivers.pkg   # expect "signed Apple Software"
+pkgutil --expand-full /Volumes/HP_PrinterSupportManual/HewlettPackardPrinterDrivers.pkg /tmp/hpdrivers
+sudo ditto /tmp/hpdrivers/HewlettPackardPrinterDrivers.pkg/Payload/Library/Printers/PPDs /Library/Printers/PPDs
+sudo ditto /tmp/hpdrivers/HewlettPackardPrinterDrivers.pkg/Payload/Library/Printers/hp /Library/Printers/hp
+sudo chown -R root:wheel /Library/Printers/PPDs /Library/Printers/hp
+hdiutil detach /Volumes/HP_PrinterSupportManual && rm -rf /tmp/hpdrivers
+```
+
+This copies only the printer drivers. The package's kernel extension, Image
+Capture plug-ins and `/usr/libexec` files are not installed and are not
+needed. To remove the driver later, delete `/Library/Printers/hp`.
+
+Then run `hpbridge setup-print --test`, or use **Printing** in the app.
 
 ## Install the command-line tool
 
@@ -166,7 +202,9 @@ valuable contribution right now.
 Tank 500**, bisa dipakai penuh di macOS tanpa software HP: cetak berwarna
 , scan ke PDF/JPEG, serta status printer dan tinta (semuanya sudah diuji di
 printer asli). Pembersihan printhead juga sudah teruji. Jalankan
-`hpbridge setup-print --test` untuk mulai mencetak.
+`hpbridge setup-print --test` untuk mulai mencetak. Di macOS di atas 15,
+installer driver HP dari Apple menolak dipasang; ikuti langkah salin manual di
+[Installing the print driver](#installing-the-print-driver).
 
 ## License
 

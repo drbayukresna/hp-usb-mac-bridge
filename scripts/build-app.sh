@@ -17,12 +17,12 @@ APP="$DIST/$APP_NAME.app"
 SIGN_ID="${SIGN_ID:--}"
 
 echo "==> Building HP Bridge $VERSION"
-if swift build -c release --product HPBridge --arch arm64 --arch x86_64 >/dev/null 2>&1; then
-    BIN=".build/apple/Products/Release/HPBridge"
+if swift build -c release --product HPBridgeApp --arch arm64 --arch x86_64 >/dev/null 2>&1; then
+    BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/HPBridgeApp"
     ARCHS="arm64 + x86_64"
 else
-    swift build -c release --product HPBridge
-    BIN=".build/release/HPBridge"
+    swift build -c release --product HPBridgeApp
+    BIN="$(swift build -c release --show-bin-path)/HPBridgeApp"
     ARCHS="$(uname -m) only"
 fi
 echo "    architectures: $ARCHS"
