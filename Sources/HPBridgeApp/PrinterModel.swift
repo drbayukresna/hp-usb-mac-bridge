@@ -121,6 +121,10 @@ final class PrinterModel: ObservableObject {
         return nil
     }
 
+    /// Epson printers use Epson's own macOS driver; HP Bridge only reads their status.
+    var isEpson: Bool { device?.vendorID == EpsonD4Session.epsonVendorID }
+    var brand: String { isEpson ? "Epson" : "HP" }
+
     var inks: [Consumable] { consumables.filter { $0.kind == .ink } }
     var printheads: [Consumable] { consumables.filter { $0.kind == .printhead } }
     var isBusy: Bool { isScanning || maintenanceRunning != nil }
@@ -134,7 +138,9 @@ final class PrinterModel: ObservableObject {
         }
         statusTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                guard let self, self.device != nil, !self.isBusy else { return }
+                // Epson status shares the USB channel with print data, so it is only
+                // read on connect and on request, never polled in the background.
+                guard let self, self.device != nil, !self.isBusy, !self.isEpson else { return }
                 await self.refresh(quiet: true)
             }
         }
@@ -142,11 +148,14 @@ final class PrinterModel: ObservableObject {
 
     private func detectDevice() {
         let found = USBBulkTransport.findDevices().first
+            ?? USBBulkTransport.findDevices(vendorID: EpsonD4Session.epsonVendorID).first
         switch (connection, found) {
         case (.connected, nil):
             connection = .disconnected
             session.reset()
             status = nil
+            info = nil
+            consumables = []
         case let (_, d?) where connection != .connected(d):
             connection = .connected(d)
             Task { await refresh() }
@@ -163,6 +172,10 @@ final class PrinterModel: ObservableObject {
         guard device != nil else { return }
         if !quiet { isRefreshing = true }
         defer { isRefreshing = false }
+        if isEpson, let device {
+            await refreshEpson(device, quiet: quiet)
+            return
+        }
         do {
             let result = try await session.run { client in
                 (try client.productInfo(),
@@ -181,6 +194,38 @@ final class PrinterModel: ObservableObject {
             if !quiet { show(error, title: String(localized: "Couldn't read the printer")) }
         }
         refreshPrintSetup()
+    }
+
+    private func refreshEpson(_ device: USBDeviceInfo, quiet: Bool) async {
+        let result: Result<EpsonStatus, Error> = await Task.detached {
+            Result { try EpsonD4Session.open(productID: device.productID).readStatus() }
+        }.value
+        switch result {
+        case let .success(st):
+            withAnimation(.spring(duration: 0.6)) {
+                info = ProductInfo.fromUSB(device, vendor: "EPSON")
+                status = st.printerStatus
+                consumables = st.inks
+            }
+            lastUpdated = Date()
+        case let .failure(error):
+            if info == nil { info = ProductInfo.fromUSB(device, vendor: "EPSON") }
+            if case EpsonError.printing = error {
+                status = nil
+                if !quiet {
+                    banner = Banner(title: String(localized: "The printer is printing"),
+                                    message: String(localized: "Status can be read again when the job has finished."),
+                                    isError: false)
+                }
+            } else if !quiet {
+                show(error, title: String(localized: "Couldn't read the printer"))
+            }
+        }
+    }
+
+    func openApp(at path: String) {
+        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path),
+                                           configuration: NSWorkspace.OpenConfiguration())
     }
 
     // MARK: - Printing

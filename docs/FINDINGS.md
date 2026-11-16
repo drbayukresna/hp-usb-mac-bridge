@@ -105,3 +105,27 @@ all `IOUSBHostDevice` services and filters on `idVendor` itself.
 > **Verified:** `hpbridge clean --level 1` runs a printhead cleaning cycle.
 > The report jobs (`maintenance pq-report`, …) use the same request and are
 > expected to work, but were not printed during testing to save paper and ink.
+
+## 7. Beyond HP: Epson L3250 (status only)
+
+Epson still ships a native (arm64) macOS driver and scanner software for the
+L3250, and macOS creates the print queue automatically when the printer is
+plugged in. There is no driver gap to fill, so `hpbridge` only adds what a
+single cross-vendor app needs: live status.
+
+* Device ID: `MFG:EPSON;CMD:ESCPL2,BDC,D4,D4PX,ESCPR1,END4,GENEP;MDL:L3250 Series`.
+* USB interfaces: `FF/FF/FF` (scanner), `07/01/02` (printer), `FF/AA/01` (utility).
+* Status uses IEEE 1284.4 ("D4") packets on the **printer-class interface**:
+  send `00 00 00 1B 01 "@EJL 1284.4\n@EJL\n@EJL\n"`, then `Init`,
+  `GetSocketID("EPSON-CTRL")` (socket 2), `OpenChannel` (11-byte payload — a
+  9-byte one is refused with result 5), `CreditRequest`, data `st 01 00 01`,
+  `Credit`, and read the `@BDC ST2` block. Close the channel and send `Exit`.
+* ST2 fields seen: `0x01` status (4 = ready), `0x0F` ink list with 3-byte
+  entries `[slot, colour, level]`. The L3250 reports level `0x69` for every
+  colour: refillable tanks are not measured.
+* Because D4 shares the channel with print data, **never talk D4 while a job
+  is printing**; `hpbridge` refuses when CUPS has a job queued for the printer,
+  and the app does not poll Epson printers in the background.
+* The same macOS quirk as in section 6 applies to interfaces: matching on
+  `idVendor` returned nothing for this device, so interfaces are matched by
+  class and filtered by vendor afterwards.

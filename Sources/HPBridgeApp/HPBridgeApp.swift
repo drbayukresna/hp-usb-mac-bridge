@@ -90,9 +90,9 @@ struct ContentView: View {
                     } else {
                         switch selection ?? .overview {
                         case .overview: OverviewView(selection: $selection)
-                        case .scan: ScanView()
-                        case .print: PrintSetupView()
-                        case .maintenance: MaintenanceView()
+                        case .scan: if model.isEpson { VendorDriverView(section: .scan) } else { ScanView() }
+                        case .print: if model.isEpson { VendorDriverView(section: .print) } else { PrintSetupView() }
+                        case .maintenance: if model.isEpson { VendorDriverView(section: .maintenance) } else { MaintenanceView() }
                         }
                     }
                 }

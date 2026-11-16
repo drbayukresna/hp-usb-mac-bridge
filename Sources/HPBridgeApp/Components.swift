@@ -122,7 +122,8 @@ struct InkTankGauge: View {
     var consumable: Consumable
     @State private var shown = false
 
-    private var fraction: Double { Double(consumable.percentRemaining ?? 0) / 100 }
+    private var measured: Bool { consumable.percentRemaining != nil }
+    private var fraction: Double { measured ? Double(consumable.percentRemaining ?? 0) / 100 : 1 }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -135,6 +136,7 @@ struct InkTankGauge: View {
                                        startPoint: .top, endPoint: .bottom)
                     )
                     .frame(height: shown ? max(6, 120 * fraction) : 0)
+                    .opacity(measured ? 1 : 0.3)
                 // Glass highlight
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(.white.opacity(0.25), lineWidth: 1)
@@ -155,7 +157,7 @@ struct InkTankGauge: View {
 
             VStack(spacing: 2) {
                 Text(consumable.localizedColor).font(.callout.weight(.medium))
-                Text(consumable.percentRemaining.map { "\($0)%" } ?? "—")
+                Text(consumable.percentRemaining.map { "\($0)%" } ?? String(localized: "not measured"))
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }

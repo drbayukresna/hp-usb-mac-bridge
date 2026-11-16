@@ -222,3 +222,55 @@ final class MockTransport: ByteTransport {
         #expect(abs(box.height - 841.68) < 0.5)
     }
 }
+
+// MARK: - Epson
+
+@Suite struct EpsonTests {
+    /// Hand-built ST2 block following the documented layout (not a device capture).
+    func block(_ fields: [(UInt8, [UInt8])]) -> [UInt8] {
+        var body: [UInt8] = []
+        for (code, data) in fields { body += [code, UInt8(data.count)] + data }
+        return Array("@BDC ST2\r\n".utf8) + [UInt8(body.count & 0xFF), UInt8(body.count >> 8)] + body
+    }
+
+    @Test func parsesStatusAndInkLevels() throws {
+        let ink: [UInt8] = [3, 1, 0x00, 80, 1, 0x01, 55, 1, 0x02, 9, 1, 0x03, 0]
+        let st = try EpsonParsers.st2([0xAA, 0xBB] + block([(0x01, [4]), (0x0F, ink)]))
+        #expect(st.state == "ready")
+        #expect(st.isReady)
+        #expect(st.errorDescription == nil)
+        #expect(st.inks.map(\.label) == ["K", "C", "M", "Y"])
+        #expect(st.inks.map(\.percentRemaining) == [80, 55, 9, 0])
+        #expect(st.inks.map(\.state) == ["ok", "ok", "low", "out"])
+    }
+
+    /// Fields captured from an Epson L3250 over USB (ST2 reply to `st`), serial field redacted.
+    @Test func parsesCapturedL3250Status() throws {
+        let fields: [(UInt8, [UInt8])] = [
+            (0x01, [0x04]),
+            (0x06, [0x01, 0x00]),
+            (0x0A, [0x11, 0x00, 0x04]),
+            (0x0F, [0x03, 0x01, 0x00, 0x69, 0x05, 0x03, 0x69, 0x04, 0x02, 0x69, 0x03, 0x01, 0x69]),
+            (0x10, [0x01, 0x0A, 0x4E]),
+            (0x13, [0x01]),
+            (0x40, Array(repeating: 0x58, count: 10)),
+            (0x4B, [0x07]),
+        ]
+        let st = try EpsonParsers.st2([0x02, 0x02, 0x00, 0x88, 0x00, 0x01] + block(fields))
+        #expect(st.state == "ready")
+        #expect(st.inks.map(\.color) == ["Black", "Yellow", "Magenta", "Cyan"])
+        #expect(st.inks.allSatisfy { $0.percentRemaining == nil && $0.type == "inkTank" })
+        #expect(st.hasUnmeasuredTanks)
+    }
+
+    @Test func reportsErrors() throws {
+        let st = try EpsonParsers.st2(block([(0x01, [0]), (0x02, [6])]))
+        #expect(st.state == "error")
+        #expect(st.errorDescription == "Paper out")
+        #expect(st.inks.isEmpty)
+    }
+
+    @Test func rejectsRepliesWithoutST2() {
+        #expect(throws: EpsonError.self) { try EpsonParsers.st2(Array("@BDC PS\r\n".utf8)) }
+    }
+}

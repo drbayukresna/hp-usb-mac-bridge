@@ -106,8 +106,10 @@ public final class USBBulkTransport: ByteTransport {
         self.selector = selector
 
         let matching = IOUSBHostInterface.__createMatchingDictionary(
-            withVendorID: NSNumber(value: vendorID),
-            productID: productID.map { NSNumber(value: $0) },
+            // Vendor/product are filtered below: putting idVendor in the matching
+            // dictionary returns nothing for some devices on recent macOS.
+            withVendorID: nil,
+            productID: nil,
             bcdDevice: nil,
             interfaceNumber: nil,
             configurationValue: nil,
@@ -126,7 +128,15 @@ public final class USBBulkTransport: ByteTransport {
 
         var services: [io_service_t] = []
         while case let service = IOIteratorNext(iterator), service != 0 {
-            services.append(service)
+            func prop(_ key: String) -> Int? {
+                IORegistryEntrySearchCFProperty(service, kIOServicePlane, key as CFString, kCFAllocatorDefault,
+                                                IOOptionBits(kIORegistryIterateRecursively | kIORegistryIterateParents)) as? Int
+            }
+            if prop("idVendor") == vendorID, productID == nil || prop("idProduct") == productID {
+                services.append(service)
+            } else {
+                IOObjectRelease(service)
+            }
         }
         defer { services.forEach { IOObjectRelease($0) } }
 

@@ -162,6 +162,7 @@ Add `-v` to any command to see the USB/HTTP conversation.
 | Printer | USB ID | Print | Scan / status / maintenance |
 |---------|--------|-------|-----------------------------|
 | HP Smart Tank 500 series | 03f0:2b54 | ✅ | ✅ |
+| Epson L3250 series | 04b8:118a | Epson's own driver | ✅ status and ink list (Epson D4 protocol) · scan and maintenance stay with Epson's software |
 
 Other HP inkjets whose device ID lists `PCL3GUI` and `LEDMDIS:USB#...` are
 likely to work. `hpbridge setup-print --ppd <file>` lets you try another PPD.

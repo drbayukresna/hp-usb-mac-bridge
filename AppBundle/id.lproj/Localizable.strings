@@ -164,3 +164,18 @@
 "Diagnostics page" = "Halaman diagnostik";
 "Configuration page" = "Halaman konfigurasi";
 "Extended configuration page" = "Halaman konfigurasi lengkap";
+
+/* Epson / other makers */
+"not measured" = "tidak diukur";
+"This printer doesn't measure its ink tanks. Check the tank windows for the real level." = "Printer ini tidak mengukur isi tangki tintanya. Lihat jendela tangki untuk level yang sebenarnya.";
+"The printer is printing" = "Printer sedang mencetak";
+"Status can be read again when the job has finished." = "Status bisa dibaca lagi setelah pencetakan selesai.";
+"This printer works with Epson's own Mac driver." = "Printer ini bekerja dengan driver Mac resmi dari Epson.";
+"Open Epson Scan 2" = "Buka Epson Scan 2";
+"Open Image Capture" = "Buka Image Capture";
+"Scan with Epson Scan 2 or Image Capture" = "Scan dengan Epson Scan 2 atau Image Capture";
+"Nozzle check and head cleaning are in Printers & Scanners" = "Cek nozzle dan pembersihan head ada di Printer & Pemindai";
+"Print from any app" = "Cetak dari aplikasi apa pun";
+"Epson still supports this printer on macOS, so HP Bridge doesn't replace its scanner software." = "Epson masih mendukung printer ini di macOS, jadi HP Bridge tidak menggantikan software scanner-nya.";
+"Open Printers & Scanners, choose the printer, then Options & Supplies → Utility → Open Printer Utility." = "Buka Printer & Pemindai, pilih printernya, lalu Options & Supplies → Utility → Open Printer Utility.";
+"macOS sets this printer up automatically when it is plugged in. If it is missing, add it in Printers & Scanners." = "macOS menyiapkan printer ini secara otomatis saat dicolok. Kalau belum ada, tambahkan di Printer & Pemindai.";

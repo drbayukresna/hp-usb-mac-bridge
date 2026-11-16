@@ -21,13 +21,16 @@ struct OverviewView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
-                        Text("Ink-tank printers can't measure the tanks; levels are estimates reset at each refill. The tank windows show the real level.")
+                        Text(model.inks.allSatisfy { $0.percentRemaining == nil }
+                             ? "This printer doesn't measure its ink tanks. Check the tank windows for the real level."
+                             : "Ink-tank printers can't measure the tanks; levels are estimates reset at each refill. The tank windows show the real level.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 HStack(alignment: .top, spacing: 20) {
+                    if !model.isEpson {
                     Card(title: "Printheads", systemImage: "rectangle.portrait.on.rectangle.portrait") {
                         ForEach(model.printheads, id: \.label) { head in
                             HStack {
@@ -47,6 +50,7 @@ struct OverviewView: View {
                         }
                         if model.printheads.isEmpty { Text("—").foregroundStyle(.secondary) }
                     }
+                    }
 
                     Card(title: "Quick actions", systemImage: "bolt.fill") {
                         QuickAction(title: "Scan a document", icon: "doc.viewfinder", tint: .blue) {
@@ -55,8 +59,10 @@ struct OverviewView: View {
                         QuickAction(title: "Set up printing", icon: "printer.fill", tint: .indigo) {
                             selection = .print
                         }
-                        QuickAction(title: "Fix faded or streaky prints", icon: "wand.and.stars", tint: .orange) {
-                            selection = .maintenance
+                        if !model.isEpson {
+                            QuickAction(title: "Fix faded or streaky prints", icon: "wand.and.stars", tint: .orange) {
+                                selection = .maintenance
+                            }
                         }
                     }
                 }
@@ -91,7 +97,7 @@ struct OverviewView: View {
             .shadow(color: .indigo.opacity(0.35), radius: 12, y: 6)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(model.info?.makeAndModel.map { "HP \($0)" } ?? model.device?.name ?? "HP")
+                Text(model.info?.makeAndModel.map { "\(model.brand) \($0)" } ?? model.device?.name ?? model.brand)
                     .font(.title.weight(.semibold))
                 HStack(spacing: 10) {
                     if let status = model.status {
