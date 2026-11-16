@@ -65,8 +65,12 @@ public interfaces the printer itself advertises.
 1. Download **HP-Bridge-x.y.z.dmg** from the
    [Releases](https://github.com/drbayukresna/hp-usb-mac-bridge/releases) page.
 2. Open it and drag **HP Bridge** into **Applications**.
-3. The first time, right-click **HP Bridge** → **Open** → **Open**. (The app
-   isn't notarized by Apple yet, so macOS asks once.)
+3. The first time you open it, macOS blocks the app because it isn't notarized
+   by Apple yet. Allow it once:
+   * **macOS 15 Sequoia and newer:** open **System Settings → Privacy &
+     Security**, scroll to *"HP Bridge" was blocked…* and click **Open Anyway**.
+   * **macOS 14 Sonoma:** right-click **HP Bridge** → **Open** → **Open**.
+   * Or, in Terminal: `xattr -dr com.apple.quarantine "/Applications/HP Bridge.app"`
 4. Plug in the printer. HP Bridge finds it automatically.
 
 | Section | What you can do |
@@ -77,8 +81,19 @@ public interfaces the printer itself advertises.
 | **Maintenance** | Guided steps, three cleaning levels with confirmation, quality and diagnostics reports, live progress |
 
 The app is available in English and Bahasa Indonesia and follows your Mac's
-language. It needs macOS 14 Sonoma or newer on an Apple Silicon Mac (an Intel
-build is planned).
+language. It needs macOS 14 Sonoma or newer and runs on both Apple Silicon
+and Intel Macs.
+
+What works on another Mac depends on the printer:
+
+* **Status, ink, scanning and maintenance (HP)** and **status (Epson)** need
+  nothing else — they talk to the printer directly over USB.
+* **Colour printing on HP** needs HP's driver files from Apple's "HP Printer
+  Drivers" package (and Rosetta 2 on Apple Silicon), once per Mac. HP Bridge
+  lists what is missing; see [Installing the print driver](#installing-the-print-driver).
+  A built-in replacement driver is in progress.
+* **Epson printing and scanning** use Epson's own driver. Install it from
+  Epson's support site if macOS doesn't offer it when you add the printer.
 
 ## Requirements (command line / building from source)
 

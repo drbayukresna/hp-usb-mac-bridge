@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds "HP Bridge.app" and a drag-to-install DMG in ./dist.
 #
-#   scripts/build-app.sh            # universal (Apple Silicon + Intel) if possible
+#   scripts/build-app.sh            # universal: Apple Silicon + Intel
 #   SIGN_ID="Developer ID Application: …" scripts/build-app.sh
 #                                   # sign with a Developer ID instead of ad-hoc
 #
@@ -17,14 +17,24 @@ APP="$DIST/$APP_NAME.app"
 SIGN_ID="${SIGN_ID:--}"
 
 echo "==> Building HP Bridge $VERSION"
-if swift build -c release --product HPBridgeApp --arch arm64 --arch x86_64 >/dev/null 2>&1; then
-    BIN="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/HPBridgeApp"
-    ARCHS="arm64 + x86_64"
-else
-    swift build -c release --product HPBridgeApp
-    BIN="$(swift build -c release --show-bin-path)/HPBridgeApp"
-    ARCHS="$(uname -m) only"
-fi
+# A single multi-arch invocation needs full Xcode; building each slice on its
+# own and joining them with lipo also works with the Command Line Tools.
+# The product is "HPBridgeApp", not "HPBridge": on a case-insensitive disk the
+# latter collides with the hpbridge CLI in the products folder.
+BIN="$(mktemp -d)/HPBridgeApp"
+SLICES=""
+ARCHS=""
+for arch in arm64 x86_64; do
+    if swift build -c release --product HPBridgeApp --arch "$arch" >/dev/null 2>&1; then
+        SLICES="$SLICES $(swift build -c release --arch "$arch" --show-bin-path)/HPBridgeApp"
+        ARCHS="$ARCHS $arch"
+    else
+        echo "    warning: could not build the $arch slice"
+    fi
+done
+[ -n "$SLICES" ] || { echo "error: build failed"; swift build -c release --product HPBridgeApp; exit 1; }
+# shellcheck disable=SC2086
+lipo -create $SLICES -output "$BIN"
 echo "    architectures: $ARCHS"
 
 echo "==> Assembling $APP"
