@@ -39,6 +39,15 @@ public struct HTTPResponseParser {
 
     public init() {}
 
+    /// True once the headers say how long the body is (Content-Length or
+    /// chunked). Such a body is complete only when all of it has arrived, no
+    /// matter how long the device pauses in between.
+    public var hasFramedBody: Bool {
+        guard let headers = head?.headers else { return false }
+        return headers["content-length"] != nil
+            || headers["transfer-encoding"]?.lowercased().contains("chunked") == true
+    }
+
     /// Feeds bytes; returns a complete response once available.
     /// - Parameter endOfStream: true when no more bytes will arrive (close-delimited body).
     public mutating func feed(_ data: Data, endOfStream: Bool = false) throws -> HTTPResponse? {
@@ -165,6 +174,12 @@ public final class HTTPOverUSB {
             }
             if !receivedAny {
                 if Date() > firstByteDeadline { throw HTTPError.noResponse(path: path) }
+            } else if parser.hasFramedBody {
+                // Scanners stream the image while the head moves and can pause for
+                // several seconds; wait for the announced length, not for silence.
+                if Date().timeIntervalSince(lastData) > (timeout ?? responseTimeout) {
+                    throw HTTPError.malformedResponse("printer stopped sending in the middle of a response")
+                }
             } else if Date().timeIntervalSince(lastData) > idleTimeout {
                 if let response = try parser.feed(Data(), endOfStream: true) { return response }
                 throw HTTPError.noResponse(path: path)

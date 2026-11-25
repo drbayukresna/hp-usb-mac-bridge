@@ -22,19 +22,19 @@ echo "==> Building HP Bridge $VERSION"
 # The product is "HPBridgeApp", not "HPBridge": on a case-insensitive disk the
 # latter collides with the hpbridge CLI in the products folder.
 BIN="$(mktemp -d)/HPBridgeApp"
-SLICES=""
 ARCHS=""
+# Slices are collected as positional parameters so paths with spaces survive.
+set --
 for arch in arm64 x86_64; do
     if swift build -c release --product HPBridgeApp --arch "$arch" >/dev/null 2>&1; then
-        SLICES="$SLICES $(swift build -c release --arch "$arch" --show-bin-path)/HPBridgeApp"
+        set -- "$@" "$(swift build -c release --arch "$arch" --show-bin-path)/HPBridgeApp"
         ARCHS="$ARCHS $arch"
     else
         echo "    warning: could not build the $arch slice"
     fi
 done
-[ -n "$SLICES" ] || { echo "error: build failed"; swift build -c release --product HPBridgeApp; exit 1; }
-# shellcheck disable=SC2086
-lipo -create $SLICES -output "$BIN"
+[ "$#" -gt 0 ] || { echo "error: build failed"; swift build -c release --product HPBridgeApp; exit 1; }
+lipo -create "$@" -output "$BIN"
 echo "    architectures: $ARCHS"
 
 echo "==> Assembling $APP"

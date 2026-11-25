@@ -5,7 +5,7 @@
 import Foundation
 import HPUSBBridge
 
-let version = "1.0.0"
+let version = "1.1.0"
 
 let usage = """
 hpbridge \(version) — USB printer companion for macOS (HP without HP software; Epson status)

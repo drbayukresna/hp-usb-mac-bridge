@@ -24,7 +24,9 @@ final class MockTransport: ByteTransport {
 
     func read(maxLength: Int, timeout: TimeInterval) throws -> Data {
         guard !pending.isEmpty else { return Data() }
-        return pending.removeFirst()
+        let next = pending.removeFirst()
+        if next.isEmpty { Thread.sleep(forTimeInterval: 0.02) }   // a scripted pause
+        return next
     }
 
     func close() {}
@@ -66,6 +68,17 @@ final class MockTransport: ByteTransport {
     @Test func malformedStatusLineThrows() {
         var p = HTTPResponseParser()
         #expect(throws: HTTPError.self) { try p.feed(Data("garbage\r\n\r\n".utf8)) }
+    }
+
+    @Test func chunkedBodySurvivesLongPausesBetweenReads() throws {
+        // Empty reads model the scanner pausing; the old code gave up after 1.5 s of silence.
+        var replies: [Data] = [Data("HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n".utf8)]
+        replies += Array(repeating: Data(), count: 6)
+        replies.append(Data("2\r\nde\r\n0\r\n\r\n".utf8))
+        let http = HTTPOverUSB(transport: MockTransport(responses: replies))
+        http.idleTimeout = 0.01
+        let r = try http.request("GET", "/Scan/Jobs/1/Pages/1", timeout: 30)
+        #expect(r.text == "abcde")
     }
 
     @Test func requestRoundTripOverMockTransport() throws {

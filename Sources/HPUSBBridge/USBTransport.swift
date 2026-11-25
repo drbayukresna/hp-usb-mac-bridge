@@ -105,39 +105,7 @@ public final class USBBulkTransport: ByteTransport {
                 skip: Int = 0) throws {
         self.selector = selector
 
-        let matching = IOUSBHostInterface.__createMatchingDictionary(
-            // Vendor/product are filtered below: putting idVendor in the matching
-            // dictionary returns nothing for some devices on recent macOS.
-            withVendorID: nil,
-            productID: nil,
-            bcdDevice: nil,
-            interfaceNumber: nil,
-            configurationValue: nil,
-            interfaceClass: NSNumber(value: selector.interfaceClass),
-            interfaceSubclass: NSNumber(value: selector.interfaceSubclass),
-            interfaceProtocol: NSNumber(value: selector.interfaceProtocol),
-            speed: nil,
-            productIDArray: nil
-        )
-
-        var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching.takeRetainedValue(), &iterator) == KERN_SUCCESS else {
-            throw USBTransportError.interfaceNotFound(selector)
-        }
-        defer { IOObjectRelease(iterator) }
-
-        var services: [io_service_t] = []
-        while case let service = IOIteratorNext(iterator), service != 0 {
-            func prop(_ key: String) -> Int? {
-                IORegistryEntrySearchCFProperty(service, kIOServicePlane, key as CFString, kCFAllocatorDefault,
-                                                IOOptionBits(kIORegistryIterateRecursively | kIORegistryIterateParents)) as? Int
-            }
-            if prop("idVendor") == vendorID, productID == nil || prop("idProduct") == productID {
-                services.append(service)
-            } else {
-                IOObjectRelease(service)
-            }
-        }
+        let services = USBBulkTransport.matchingInterfaces(selector, vendorID: vendorID, productID: productID)
         defer { services.forEach { IOObjectRelease($0) } }
 
         if services.isEmpty {
@@ -215,6 +183,51 @@ public final class USBBulkTransport: ByteTransport {
             throw USBTransportError.io("read failed: \(error.localizedDescription)")
         }
         return Data(bytes: buffer.bytes, count: Int(transferred))
+    }
+
+    /// IOUSBHostInterface services for `selector` on the given device.
+    ///
+    /// macOS matches interfaces differently by class: a vendor-specific
+    /// interface (class 0xFF, e.g. HP's LEDM) is only returned when the
+    /// matching dictionary names the vendor, while a standard class interface
+    /// (e.g. an Epson printer-class 07/01/02) is only returned when it does not.
+    /// Try both and filter on the device's vendor/product afterwards.
+    static func matchingInterfaces(_ selector: USBInterfaceSelector, vendorID: Int, productID: Int?) -> [io_service_t] {
+        var found: [io_service_t] = []
+        var seen = Set<UInt64>()
+        for withVendor in [true, false] {
+            let matching = IOUSBHostInterface.__createMatchingDictionary(
+                withVendorID: withVendor ? NSNumber(value: vendorID) : nil,
+                productID: withVendor ? productID.map { NSNumber(value: $0) } : nil,
+                bcdDevice: nil,
+                interfaceNumber: nil,
+                configurationValue: nil,
+                interfaceClass: NSNumber(value: selector.interfaceClass),
+                interfaceSubclass: NSNumber(value: selector.interfaceSubclass),
+                interfaceProtocol: NSNumber(value: selector.interfaceProtocol),
+                speed: nil,
+                productIDArray: nil
+            )
+            var iterator: io_iterator_t = 0
+            guard IOServiceGetMatchingServices(kIOMainPortDefault, matching.takeRetainedValue(), &iterator) == KERN_SUCCESS
+            else { continue }
+            defer { IOObjectRelease(iterator) }
+            while case let service = IOIteratorNext(iterator), service != 0 {
+                func prop(_ key: String) -> Int? {
+                    IORegistryEntrySearchCFProperty(service, kIOServicePlane, key as CFString, kCFAllocatorDefault,
+                                                    IOOptionBits(kIORegistryIterateRecursively | kIORegistryIterateParents)) as? Int
+                }
+                var entryID: UInt64 = 0
+                IORegistryEntryGetRegistryEntryID(service, &entryID)
+                if prop("idVendor") == vendorID, productID == nil || prop("idProduct") == productID,
+                   seen.insert(entryID).inserted {
+                    found.append(service)
+                } else {
+                    IOObjectRelease(service)
+                }
+            }
+        }
+        return found
     }
 
     /// Discards anything left in the IN pipe from an earlier, interrupted conversation.
